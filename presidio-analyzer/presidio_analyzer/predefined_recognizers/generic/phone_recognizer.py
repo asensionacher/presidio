@@ -25,7 +25,7 @@ class PhoneRecognizer(LocalRecognizer):
 
     SCORE = 0.4
     CONTEXT = ["phone", "number", "telephone", "cell", "cellphone", "mobile", "call"]
-    DEFAULT_SUPPORTED_REGIONS = ("US", "UK", "DE", "FR", "IL", "IN", "CA", "BR")
+    DEFAULT_SUPPORTED_REGIONS = ("US", "UK", "DE", "FR", "IL", "IN", "CA", "BR", "ES")
 
     def __init__(
         self,

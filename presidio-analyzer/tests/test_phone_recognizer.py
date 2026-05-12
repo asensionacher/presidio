@@ -28,6 +28,10 @@ def recognizer():
         ("BR: +55 11 98456 5666", 1, ["PHONE_NUMBER"], ((4, 21), ), 0.4),
         ("My Japanese number is 090-1234-5678", 1, ["PHONE_NUMBER"],((22, 35), ), 0.4),
         ("My CN number is 13812345678", 1, ["PHONE_NUMBER"],((16, 27), ), 0.4),
+        ("My Spanish number is +34 912 345 678", 1, ["PHONE_NUMBER"], ((21, 36), ), 0.4),
+        ("ES: 912 345 678", 1, ["PHONE_NUMBER"], ((4, 15), ), 0.4),
+        ("My Spanish mobile is 612345678", 1, ["PHONE_NUMBER"], ((21, 30), ), 0.4),
+        ("ES: 912345678", 1, ["PHONE_NUMBER"], ((4, 13), ), 0.4),
         # fmt: on
     ],
 )
@@ -144,3 +148,39 @@ def test_get_analysis_explanation():
     test_region = "US"
     explanation = phone_recognizer._get_analysis_explanation(test_region)
     assert explanation.recognizer == "PhoneRecognizer"
+
+
+@pytest.mark.parametrize(
+    "text, expected_len, entities, expected_positions",
+    [
+        # fmt: off
+        # International format
+        ("+34 912 345 678", 1, ["PHONE_NUMBER"], ((0, 15),)),
+        ("+34 612 345 678", 1, ["PHONE_NUMBER"], ((0, 15),)),
+        # Landline (9xx)
+        ("912 345 678", 1, ["PHONE_NUMBER"], ((0, 11),)),
+        ("932 345 678", 1, ["PHONE_NUMBER"], ((0, 11),)),
+        # Mobile (6xx / 7xx)
+        ("612 345 678", 1, ["PHONE_NUMBER"], ((0, 11),)),
+        ("712 345 678", 1, ["PHONE_NUMBER"], ((0, 11),)),
+        # Embedded in sentence
+        ("Mi telefono es 912 345 678", 1, ["PHONE_NUMBER"], ((15, 26),)),
+        ("Llamar al +34 612 345 678 para mas info", 1, ["PHONE_NUMBER"], ((10, 25),)),
+        # Multiple numbers
+        ("Fijo: 912 345 678 y movil: 612 345 678", 2, ["PHONE_NUMBER", "PHONE_NUMBER"], ((6, 17), (27, 38))),
+        # Non-ES numbers should not match when limited to ES region
+        ("(415) 555-0132", 0, ["PHONE_NUMBER"], ()),
+        # fmt: on
+    ],
+)
+def test_when_es_phones_then_succeed(
+    text,
+    expected_len,
+    entities,
+    expected_positions,
+):
+    recognizer = PhoneRecognizer(supported_regions=("ES",))
+    results = recognizer.analyze(text, entities)
+    assert len(results) == expected_len
+    for i, (res, (st_pos, fn_pos)) in enumerate(zip(results, expected_positions)):
+        assert_result(res, entities[i], st_pos, fn_pos, PhoneRecognizer.SCORE)
